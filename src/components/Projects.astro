@@ -1,0 +1,68 @@
+---
+import { getCollection } from 'astro:content';
+import ProjectCard from './ProjectCard.astro';
+import { showCaseStudies } from '../data/contentFlags';
+
+const all = await getCollection('projects');
+const projects = all.sort((a, b) => a.data.order - b.data.order);
+
+const caseStudies = showCaseStudies
+  ? projects.filter((p) => p.data.kind === 'case-study')
+  : [];
+const playground = projects.filter((p) => p.data.kind === 'playground');
+const featured = caseStudies.filter((p) => p.data.featured);
+const otherCases = caseStudies.filter((p) => !p.data.featured);
+---
+
+<section id="projects" class="scroll-mt-20 py-12 sm:py-16" aria-labelledby="projects-heading">
+  <p class="section-label">// work</p>
+  <h2 id="projects-heading" class="mt-2 font-mono text-2xl text-terminal-text sm:text-3xl">
+    <span class="text-terminal-muted">tree</span> ./projects
+  </h2>
+  <p class="mt-3 max-w-2xl text-sm text-terminal-dim">
+    {
+      showCaseStudies
+        ? 'Work-shaped case studies first (some anonymized). Playground holds labs, templates, and public demos.'
+        : 'Public labs, templates, and demos. Deeper work narratives stay offline for now.'
+    }
+  </p>
+
+  {
+    featured.length > 0 && (
+      <div class="mt-8">
+        <h3 class="font-mono text-sm text-terminal-cyan">case-studies/featured</h3>
+        <div class="mt-4 grid gap-4 lg:grid-cols-2">
+          {featured.map((project) => (
+            <ProjectCard project={project} featured />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  {
+    otherCases.length > 0 && (
+      <div class="mt-10">
+        <h3 class="font-mono text-sm text-terminal-cyan">case-studies/</h3>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+          {otherCases.map((project) => (
+            <ProjectCard project={project} />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  {
+    playground.length > 0 && (
+      <div class:list={['mt-8', showCaseStudies && 'mt-10']}>
+        {showCaseStudies && <h3 class="font-mono text-sm text-terminal-amber">playground/</h3>}
+        <div class:list={['grid gap-4 sm:grid-cols-2 lg:grid-cols-3', showCaseStudies && 'mt-4']}>
+          {playground.map((project) => (
+            <ProjectCard project={project} compact />
+          ))}
+        </div>
+      </div>
+    )
+  }
+</section>

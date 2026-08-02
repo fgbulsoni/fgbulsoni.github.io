@@ -1,0 +1,99 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  featured?: boolean;
+  compact?: boolean;
+}
+
+const { project, featured = false, compact = false } = Astro.props;
+const { title, summary, kind, stack, repo, demo, status, year } = project.data;
+const href = `/projects/${project.id}/`;
+
+const kindLabel = kind === 'case-study' ? 'case-study' : 'playground';
+const kindClass =
+  kind === 'case-study'
+    ? 'border-terminal-cyan/40 text-terminal-cyan'
+    : 'border-terminal-amber/40 text-terminal-amber';
+
+const stackShown = compact ? stack.slice(0, 4) : stack;
+---
+
+<article
+  class:list={[
+    'panel group flex h-full flex-col transition hover:border-terminal-green/40',
+    featured ? 'border-terminal-green/30 p-6 sm:p-7' : 'p-5',
+    compact && 'p-4',
+  ]}
+>
+  <div class="flex flex-wrap items-center gap-2">
+    <span class={`rounded border px-2 py-0.5 font-mono text-[11px] uppercase tracking-wider ${kindClass}`}>
+      {kindLabel}
+    </span>
+    <span class="font-mono text-[11px] uppercase tracking-wider text-terminal-muted">
+      {status}
+    </span>
+    {year && <span class="font-mono text-[11px] text-terminal-muted">{year}</span>}
+  </div>
+
+  <h3
+    class:list={[
+      'mt-3 font-mono text-terminal-text group-hover:text-terminal-green',
+      featured ? 'text-xl' : compact ? 'text-base' : 'text-lg',
+    ]}
+  >
+    <a href={href} class="focus:outline-none focus-visible:ring-2 focus-visible:ring-terminal-green/50">
+      {title}
+    </a>
+  </h3>
+
+  <p
+    class:list={[
+      'mt-2 flex-1 leading-relaxed text-terminal-dim',
+      compact ? 'text-xs' : 'text-sm',
+      featured && 'sm:text-base',
+    ]}
+  >
+    {summary}
+  </p>
+
+  <ul class="mt-4 flex flex-wrap gap-1.5">
+    {
+      stackShown.map((tech) => (
+        <li class="chip">{tech}</li>
+      ))
+    }
+    {compact && stack.length > stackShown.length && (
+      <li class="chip">+{stack.length - stackShown.length}</li>
+    )}
+  </ul>
+
+  <div class="mt-5 flex flex-wrap gap-3 border-t border-terminal-border pt-4 font-mono text-xs">
+    <a href={href} class="text-terminal-green hover:underline">read more →</a>
+    {
+      repo && (
+        <a
+          href={repo}
+          class="text-terminal-dim hover:text-terminal-green"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          repo
+        </a>
+      )
+    }
+    {
+      demo && (
+        <a
+          href={demo}
+          class="text-terminal-dim hover:text-terminal-green"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          demo
+        </a>
+      )
+    }
+  </div>
+</article>

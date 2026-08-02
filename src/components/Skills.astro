@@ -1,0 +1,23 @@
+---
+import { site } from '../data/site';
+---
+
+<section id="skills" class="scroll-mt-20 py-12 sm:py-16" aria-labelledby="skills-heading">
+  <p class="section-label">// stack</p>
+  <h2 id="skills-heading" class="mt-2 font-mono text-2xl text-terminal-text sm:text-3xl">
+    <span class="text-terminal-muted">ls</span> ./skills
+  </h2>
+
+  <div class="panel mt-6 divide-y divide-terminal-border">
+    {
+      site.skills.map((group) => (
+        <div class="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-baseline sm:gap-6">
+          <h3 class="w-40 shrink-0 font-mono text-xs text-terminal-green sm:text-sm">{group.group}</h3>
+          <p class="font-mono text-xs leading-relaxed text-terminal-dim sm:text-sm">
+            {group.items.join(' · ')}
+          </p>
+        </div>
+      ))
+    }
+  </div>
+</section>

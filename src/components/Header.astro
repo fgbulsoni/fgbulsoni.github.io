@@ -1,0 +1,67 @@
+---
+import { site } from '../data/site';
+
+const links = [
+  { href: '/#experience', label: 'experience' },
+  { href: '/#contracts', label: 'contracts' },
+  { href: '/#projects', label: 'projects' },
+  { href: '/#about', label: 'about' },
+  { href: '/#skills', label: 'stack' },
+  { href: '/#contact', label: 'contact' },
+  { href: site.links.resume, label: 'resume' },
+];
+---
+
+<header class="sticky top-0 z-50 -mx-4 border-b border-terminal-border/80 bg-terminal-bg/90 px-4 backdrop-blur-md sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+  <div class="mx-auto flex max-w-5xl items-center justify-between gap-3 py-3">
+    <a href="/" class="shrink-0 font-mono text-sm text-terminal-green">
+      <span class="text-terminal-muted">~/</span>{site.login}
+    </a>
+
+    <nav class="hidden items-center gap-4 lg:flex" aria-label="Primary">
+      {
+        links.map((link) => (
+          <a
+            href={link.href}
+            class="font-mono text-xs text-terminal-dim hover:text-terminal-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terminal-green/50"
+          >
+            ./{link.label}
+          </a>
+        ))
+      }
+    </nav>
+
+    <details class="nav-mobile relative lg:hidden">
+      <summary
+        class="cursor-pointer list-none rounded border border-terminal-border px-3 py-1.5 font-mono text-xs text-terminal-dim hover:border-terminal-green/40 hover:text-terminal-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terminal-green/50 [&::-webkit-details-marker]:hidden"
+        aria-label="Open menu"
+      >
+        menu
+      </summary>
+      <div
+        class="absolute right-0 z-50 mt-2 min-w-[12rem] rounded-lg border border-terminal-border bg-terminal-panel p-2 shadow-xl shadow-black/40"
+      >
+        {
+          links.map((link) => (
+            <a
+              href={link.href}
+              class="block rounded px-3 py-2 font-mono text-xs text-terminal-dim hover:bg-terminal-bg hover:text-terminal-green"
+            >
+              ./{link.label}
+            </a>
+          ))
+        }
+      </div>
+    </details>
+  </div>
+</header>
+
+<script>
+  // Close mobile menu after navigating to an in-page anchor
+  document.querySelectorAll('.nav-mobile a').forEach((anchor) => {
+    anchor.addEventListener('click', () => {
+      const details = document.querySelector('.nav-mobile');
+      if (details instanceof HTMLDetailsElement) details.open = false;
+    });
+  });
+</script>

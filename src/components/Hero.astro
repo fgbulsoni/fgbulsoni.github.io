@@ -1,0 +1,114 @@
+---
+import { site } from '../data/site';
+---
+
+<section class="fade-up py-12 sm:py-20" aria-labelledby="hero-heading">
+  <div class="panel overflow-hidden">
+    <div class="flex items-center gap-2 border-b border-terminal-border px-4 py-2.5">
+      <span class="h-2.5 w-2.5 rounded-full bg-red-500/80" aria-hidden="true"></span>
+      <span class="h-2.5 w-2.5 rounded-full bg-amber-400/80" aria-hidden="true"></span>
+      <span class="h-2.5 w-2.5 rounded-full bg-terminal-green/80" aria-hidden="true"></span>
+      <span class="ml-2 font-mono text-xs text-terminal-muted">{site.login}@portfolio:~</span>
+    </div>
+
+    <div class="space-y-5 p-6 sm:p-8">
+      <div
+        id="terminal-boot"
+        class="min-h-[5.5rem] font-mono text-sm leading-relaxed text-terminal-dim sm:min-h-[4.5rem]"
+        aria-live="polite"
+      >
+        <noscript>
+          <p><span class="text-terminal-green">➜</span> whoami</p>
+          <p class="text-terminal-text">{site.name}</p>
+          <p><span class="text-terminal-green">➜</span> cat domains.txt</p>
+          <p class="text-terminal-cyan">
+            {site.domains.map((d) => d.label).join(' · ')}
+          </p>
+        </noscript>
+      </div>
+
+      <div>
+        <p class="font-mono text-xs uppercase tracking-[0.2em] text-terminal-muted sm:tracking-[0.25em]">
+          {site.title}
+        </p>
+        <h1
+          id="hero-heading"
+          class="mt-2 font-mono text-3xl font-semibold tracking-tight text-terminal-green sm:text-4xl md:text-5xl"
+        >
+          {site.name}
+        </h1>
+      </div>
+
+      <p class="max-w-2xl text-base leading-relaxed text-terminal-text sm:text-lg">
+        {site.tagline}
+      </p>
+
+      <p class="font-mono text-sm text-terminal-muted">
+        <span class="text-terminal-cyan">@</span> {site.location}
+      </p>
+
+      <!-- Domain map: coolness + scannable career surface -->
+      <div class="pt-1" aria-label="Domains worked">
+        <p class="mb-3 font-mono text-[11px] uppercase tracking-wider text-terminal-muted">
+          domains/
+        </p>
+        <ul class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {
+            site.domains.map((d) => (
+              <li class="domain-node rounded border border-terminal-border bg-terminal-bg/60 px-3 py-2 transition hover:border-terminal-green/40">
+                <span class="block font-mono text-xs text-terminal-green">{d.label}</span>
+                <span class="mt-0.5 block text-[11px] leading-snug text-terminal-muted">{d.hint}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+
+      <div class="flex flex-wrap gap-3 pt-2">
+        <a href="#experience" class="btn-primary">./experience</a>
+        <a href={site.links.resume} class="btn-ghost">./resume</a>
+        <a
+          href={site.links.linkedin}
+          class="btn-ghost"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          linkedin
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script define:vars={{ name: site.name, domains: site.domains.map((d) => d.label).join(' · ') }}>
+  const root = document.getElementById('terminal-boot');
+  if (!root) throw new Error('terminal-boot missing');
+
+  const lines = [
+    { html: '<span class="text-terminal-green">➜</span> whoami', delay: 0 },
+    { html: `<span class="text-terminal-text">${name}</span>`, delay: 400 },
+    { html: '<span class="text-terminal-green">➜</span> cat domains.txt', delay: 900 },
+    { html: `<span class="text-terminal-cyan">${domains}</span>`, delay: 1400 },
+    {
+      html: '<span class="text-terminal-green">➜</span> <span class="cursor-blink inline-block h-4 w-2 translate-y-0.5 bg-terminal-green align-middle"></span>',
+      delay: 1900,
+    },
+  ];
+
+  root.replaceChildren();
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function addLine(html) {
+    const p = document.createElement('p');
+    p.innerHTML = html;
+    root.appendChild(p);
+  }
+
+  if (reduceMotion) {
+    lines.forEach((l) => addLine(l.html));
+  } else {
+    lines.forEach((l) => {
+      window.setTimeout(() => addLine(l.html), l.delay);
+    });
+  }
+</script>

@@ -1,0 +1,77 @@
+---
+import { site } from '../data/site';
+---
+
+<section id="experience" class="scroll-mt-20 py-12 sm:py-16" aria-labelledby="experience-heading">
+  <p class="section-label">// experience</p>
+  <h2 id="experience-heading" class="mt-2 font-mono text-2xl text-terminal-text sm:text-3xl">
+    <span class="text-terminal-muted">git log</span> --oneline staff
+  </h2>
+  <p class="mt-3 max-w-2xl text-sm text-terminal-dim">
+    Staff path by industry. Heavier signal on the roles that define the current story; older stops stay short.
+  </p>
+
+  <ol class="relative mt-8 space-y-0 border-l border-terminal-border pl-6 sm:pl-8">
+    {
+      site.experience.map((item) => (
+        <li class={`relative pb-8 last:pb-0 ${item.featured ? '' : ''}`}>
+          <span
+            class={`absolute -left-[1.54rem] top-1.5 h-2.5 w-2.5 rounded-full sm:-left-[2.04rem] ${
+              item.featured
+                ? 'bg-terminal-green ring-4 ring-terminal-green/20'
+                : 'bg-terminal-border ring-4 ring-terminal-bg'
+            }`}
+            aria-hidden="true"
+          />
+          <article
+            class={`panel p-5 ${item.featured ? 'border-terminal-green/35 sm:p-6' : ''}`}
+          >
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded border border-terminal-cyan/40 px-2 py-0.5 font-mono text-[11px] uppercase tracking-wider text-terminal-cyan">
+                {item.domain}
+              </span>
+              <span class="font-mono text-[11px] text-terminal-muted">{item.period}</span>
+            </div>
+            <h3
+              class={`mt-3 font-mono text-terminal-green ${item.featured ? 'text-lg sm:text-xl' : 'text-base'}`}
+            >
+              {item.org}
+            </h3>
+            <p class="mt-1 font-mono text-xs text-terminal-muted">{item.role}</p>
+            <p
+              class={`mt-3 leading-relaxed text-terminal-dim ${item.featured ? 'text-sm sm:text-base' : 'text-sm'}`}
+            >
+              {item.tease}
+            </p>
+            {(item.stack.length > 0 || item.signals.length > 0) && (
+              <ul class="mt-4 flex flex-wrap gap-2" aria-label="Stack and highlights">
+                {item.stack.map((s) => (
+                  <li class="chip border-terminal-green/30 text-terminal-text">{s}</li>
+                ))}
+                {item.signals.map((s) => (
+                  <li class="chip border-terminal-cyan/25 text-terminal-dim">{s}</li>
+                ))}
+              </ul>
+            )}
+          </article>
+        </li>
+      ))
+    }
+  </ol>
+
+  <p class="mt-2 font-mono text-xs text-terminal-muted">
+    # Full dates & bullets →{' '}
+    <a
+      href={site.links.linkedin}
+      class="text-terminal-dim underline decoration-terminal-border hover:text-terminal-green"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      LinkedIn
+    </a>
+    {' · '}
+    <a href={site.links.resume} class="text-terminal-dim underline decoration-terminal-border hover:text-terminal-green">
+      resume
+    </a>
+  </p>
+</section>
