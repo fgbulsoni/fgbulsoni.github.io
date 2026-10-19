@@ -3,7 +3,7 @@ title: Opinionated FastAPI project template
 summary: A minimal FastAPI skeleton that encodes good defaults — structure, practices, and a clean starting point for real services.
 kind: playground
 featured: true
-order: 2
+order: 5
 stack: [Python, FastAPI, API design]
 repo: https://github.com/fgbulsoni/fastapi_templated_project
 year: 2024

@@ -3,7 +3,7 @@ title: GoCD agent image with .NET SDK
 summary: Custom GoCD agent on Ubuntu with dotnet-sdk preinstalled — less bootstrap friction for .NET pipelines.
 kind: playground
 featured: false
-order: 3
+order: 20
 stack: [Docker, GoCD, .NET, Ubuntu]
 repo: https://github.com/fgbulsoni/gocd_agent_dotnet2.2_ubuntu18.04
 status: demo
