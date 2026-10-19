@@ -3,7 +3,7 @@ title: Nexus3 Docker image (controlled access)
 summary: A practical fork-style Nexus3 image variant kept for environments where controlled root access to the container matters.
 kind: playground
 featured: false
-order: 4
+order: 21
 stack: [Docker, Nexus3, artifact repositories]
 repo: https://github.com/fgbulsoni/nexus3
 status: demo
