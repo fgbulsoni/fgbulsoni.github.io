@@ -1,0 +1,167 @@
+# Squash-merge Dependabot PRs once non-optional checks are green.
+#
+# MUST use pull_request_target (not pull_request): Dependabot PRs get a
+# read-only GITHUB_TOKEN on pull_request, so merge would fail even when checks
+# pass. pull_request_target runs from the default branch with normal permissions.
+#
+# Security: we only call the GitHub API (gh / REST). We never execute code from
+# the PR branch.
+#
+# Private free-tier often cannot use GitHub "Allow auto-merge" + required checks,
+# so we poll check runs and merge with gh when green.
+#
+# Do not use `gh pr view --json statusCheckRollup` with the default GITHUB_TOKEN
+# under explicit permissions: GraphQL resolves checkSuite.workflowRun and fails
+# with "Resource not accessible by integration" unless actions:read is granted.
+# Prefer REST check-runs (checks:read) on the PR head SHA instead.
+
+name: Dependabot auto-merge
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+  statuses: read
+  # write: starts deploy.yml after a merge.
+  actions: write
+
+jobs:
+  merge:
+    name: wait-and-squash-merge
+    # PR author, not event actor (reopen/synchronize by a human must still merge Dependabot PRs).
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      # Default-branch checkout only (pull_request_target). Gives gh a git repo
+      # context; we do not run untrusted PR code.
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Wait for checks and squash-merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          # Job names to ignore: only this workflow itself (markdown is a step of the
+          # blocking "checks" job now).
+          IGNORE_NAME_REGEX: "(?i)^(dependabot auto-merge|wait-and-squash-merge)$"
+          POLL_SECONDS: "20"
+          MAX_WAIT_SECONDS: "2400"
+          # Workflows can take a few seconds to queue their jobs; never merge on
+          # an early "all green" that only saw the fast ones.
+          MIN_WAIT_SECONDS: "90"
+        run: |
+          set -euo pipefail
+
+          echo "Dependabot PR #${PR} on ${GH_REPO} — waiting for checks…"
+
+          deadline=$((SECONDS + MAX_WAIT_SECONDS))
+          while (( SECONDS < deadline )); do
+            if ! head_sha=$(gh pr view "$PR" --repo "$GH_REPO" --json headRefOid --jq .headRefOid 2>&1); then
+              echo "gh pr view (headRefOid) failed: $head_sha"
+              sleep "$POLL_SECONDS"
+              continue
+            fi
+            if [[ -z "$head_sha" || "$head_sha" == "null" ]]; then
+              echo "Empty head SHA; sleeping ${POLL_SECONDS}s…"
+              sleep "$POLL_SECONDS"
+              continue
+            fi
+
+            # REST check-runs on the head commit — avoids statusCheckRollup GraphQL
+            # fields that require Actions workflow-run access.
+            if ! runs_json=$(gh api --paginate "repos/${GH_REPO}/commits/${head_sha}/check-runs" 2>&1); then
+              echo "gh api check-runs failed: $runs_json"
+              sleep "$POLL_SECONDS"
+              continue
+            fi
+
+            # --paginate can emit multiple JSON objects; -s slurps them.
+            # Prefer the latest run per check name (re-runs leave older rows).
+            mapfile -t rows < <(
+              printf '%s' "$runs_json" | jq -s -r --arg ign "$IGNORE_NAME_REGEX" '
+                [ .[].check_runs[]? ]
+                | group_by(.name // "unknown")
+                | map(sort_by(.started_at // "") | last)
+                | .[]
+                | . as $c
+                | ($c.name // "unknown") as $n
+                | select(($n | test($ign)) | not)
+                | (
+                    if ($c.conclusion != null and $c.conclusion != "") then $c.conclusion
+                    elif ($c.status != null and $c.status != "" and ($c.status | ascii_upcase) != "COMPLETED") then "PENDING"
+                    else "PENDING"
+                    end
+                  ) as $o
+                | "\($n)|\($o | ascii_upcase)"
+              '
+            )
+
+            if [[ ${#rows[@]} -eq 0 ]]; then
+              echo "No relevant checks yet (sha=${head_sha:0:7}); sleeping ${POLL_SECONDS}s…"
+              sleep "$POLL_SECONDS"
+              continue
+            fi
+
+            pending=0
+            failed=0
+            ok=0
+            for row in "${rows[@]}"; do
+              name="${row%%|*}"
+              outcome="${row#*|}"
+              case "$outcome" in
+                SUCCESS|NEUTRAL|SKIPPED)
+                  ok=$((ok + 1))
+                  echo "  OK      $name ($outcome)"
+                  ;;
+                FAILURE|CANCELLED|TIMED_OUT|ACTION_REQUIRED|ERROR|STARTUP_FAILURE)
+                  failed=$((failed + 1))
+                  echo "  FAIL    $name ($outcome)"
+                  ;;
+                *)
+                  pending=$((pending + 1))
+                  echo "  WAIT    $name ($outcome)"
+                  ;;
+              esac
+            done
+
+            echo "Summary: ok=$ok pending=$pending failed=$failed sha=${head_sha:0:7}"
+
+            if (( failed > 0 )); then
+              echo "A required check failed — not merging."
+              exit 1
+            fi
+
+            if (( pending == 0 && SECONDS < MIN_WAIT_SECONDS )); then
+              echo "All green so far; waiting until ${MIN_WAIT_SECONDS}s for late jobs…"
+              sleep "$POLL_SECONDS"
+              continue
+            fi
+
+            if (( pending == 0 )); then
+              echo "All relevant checks green — squash-merging PR #${PR}"
+              if gh pr merge "$PR" --repo "$GH_REPO" --squash --delete-branch; then
+                echo "Merged."
+                # A merge pushed with GITHUB_TOKEN starts no workflows, so
+                # deploy explicitly (workflow_dispatch is the exception).
+                gh workflow run deploy.yml --repo "$GH_REPO" --ref master
+                exit 0
+              fi
+              echo "gh pr merge failed."
+              exit 1
+            fi
+
+            sleep "$POLL_SECONDS"
+          done
+
+          echo "Timed out after ${MAX_WAIT_SECONDS}s waiting for checks."
+          exit 1
