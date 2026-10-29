@@ -16,14 +16,13 @@ Built with **Astro**, **Tailwind CSS v4**, and **TypeScript**. Hosted on **GitHu
 Requires **Node.js ≥ 22.12**.
 
 ```bash
-npm install
-npm run dev
+make dev       # installs from the lockfile if needed, hot reload on :4321
+make start     # same, in the background (make stop / status / logs)
+make build     # production build into dist/
+make preview   # build, then serve dist/
 ```
 
-```bash
-npm run build
-npm run preview
-```
+`make help` lists every target.
 
 ## Content
 
